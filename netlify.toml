@@ -1,6 +1,3 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-[[functions.node_fetch]] 
-  name = "*"
-  included_files = ["node_modules/node-fetch/**"]
