@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم تحليل أعمار الديون وأرصدة البنوك</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 350px;
+            max-height: 450px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .bar-chart-container {
+            position: relative;
+            width: 100%;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .kpi-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+        }
+        .main-content {
+            transition: filter 0.5s ease-in-out;
+        }
+        .blurred {
+            filter: blur(8px);
+            pointer-events: none;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .sortable:hover, .collapsible-row:hover, .sortable-bank:hover {
+            cursor: pointer;
+            background-color: #f1f5f9;
+        }
+        .sortable .sort-icon, .collapsible-row .toggle-icon, .sortable-bank .sort-icon {
+            opacity: 0.5;
+            transition: all 0.2s ease;
+        }
+        .sortable:hover .sort-icon, .collapsible-row:hover .toggle-icon, .sortable-bank:hover .sort-icon {
+            opacity: 1;
+        }
+        .collapsible-row.open .toggle-icon {
+            transform: rotate(90deg);
+        }
+        .invoice-detail-row {
+            background-color: #ffffff;
+        }
+        .invoice-detail-row td {
+            padding: 0;
+        }
+        .currency-USD { background-color: #e0f2fe; color: #075985; }
+        .currency-EUR { background-color: #eef2ff; color: #3730a3; }
+        .currency-GBP { background-color: #f0fdf4; color: #14532d; }
+        .currency-EGP { background-color: #fafafa; color: #3f3f46; }
+    </style>
+</head>
+<body class="text-slate-800" oncontextmenu="return false;">
+
+    <div id="password-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
+            <h2 class="text-2xl font-bold mb-4">الرجاء إدخال كلمة المرور</h2>
+            <p class="text-sm text-slate-500 mb-6">هذا التقرير محمي. أدخل كلمة المرور للمتابعة.</p>
+            <form id="password-form">
+                <input type="password" id="password-input" class="w-full p-3 text-center border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="••••••••">
+                <p id="error-message" class="text-red-500 text-sm mt-2 hidden">كلمة المرور غير صحيحة. حاول مرة أخرى.</p>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold p-3 mt-6 rounded-lg hover:bg-blue-700 transition-colors">
+                    الدخول
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="main-content" class="container mx-auto p-4 sm:p-6 md:p-8 main-content blurred">
+        
+        <header class="text-center mb-10 fade-in-up">
+            <h1 class="text-5xl md:text-7xl font-black text-red-700" id="overdue-percentage-header">0%</h1>
+            <p class="text-xl md:text-2xl font-bold text-slate-700 mt-2">من ديوننا في خطر: خطة عمل فورية</p>
+            <p class="text-sm text-slate-500 mt-1" id="report-date">تقرير يونيو 2025</p>
+        </header>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div id="bank-kpi-card" class="kpi-card cursor-pointer bg-white p-6 rounded-2xl shadow-md fade-in-up" style="animation-delay: 50ms;">
+                <div class="flex justify-between items-start">
+                    <p class="text-lg font-bold text-slate-600">إجمالي أرصدة البنوك</p>
+                    <span class="text-3xl">🏦</span>
+                </div>
+                <p class="text-4xl font-bold mt-2 text-green-600" id="total-bank-balances-kpi">0</p>
+            </div>
+            <div class="kpi-card bg-white p-6 rounded-2xl shadow-md fade-in-up" style="animation-delay: 150ms;">
+                <div class="flex justify-between items-start">
+                    <p class="text-lg font-bold text-slate-600">إجمالي المستحقات</p>
+                    <span class="text-3xl">💰</span>
+                </div>
+                <p class="text-4xl font-bold mt-2 text-slate-800" id="total-receivables">0</p>
+            </div>
+            <div class="kpi-card bg-white p-6 rounded-2xl shadow-md fade-in-up" style="animation-delay: 250ms;">
+                <div class="flex justify-between items-start">
+                    <p class="text-lg font-bold text-slate-600">الديون المتأخرة</p>
+                    <span class="text-3xl text-amber-500">❗</span>
+                </div>
+                <p class="text-4xl font-bold mt-2 text-amber-500" id="overdue-amount">0</p>
+            </div>
+            <div class="kpi-card bg-white p-6 rounded-2xl shadow-md fade-in-up" style="animation-delay: 350ms;">
+                <div class="flex justify-between items-start">
+                    <p class="text-lg font-bold text-slate-600">ديون في خطر شديد</p>
+                    <span class="text-3xl text-red-600">📈</span>
+                </div>
+                <p class="text-4xl font-bold mt-2 text-red-600" id="high-risk-debt">0</p>
+            </div>
+        </section>
+
+
+        <main class="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12">
+            
+            <section class="lg:col-span-3 bg-white p-6 rounded-2xl shadow-lg fade-in-up" style="animation-delay: 500ms;">
+                <h2 class="text-2xl font-bold mb-1 text-center">أين تتركز المشكلة؟</h2>
+                <p class="text-sm text-slate-500 text-center mb-4">توزيع المديونية حسب فترة التقادم</p>
+                <div class="chart-container">
+                    <canvas id="aging-chart"></canvas>
+                </div>
+            </section>
+
+            <section class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg fade-in-up" style="animation-delay: 600ms;">
+                <h2 class="text-2xl font-bold mb-1 text-center">من هم أصحاب المديونية الأكبر؟</h2>
+                <p class="text-sm text-slate-500 text-center mb-6" id="top-clients-subtitle">قائمة التركيز الفوري</p>
+                <div id="top-clients-list" class="space-y-4">
+                </div>
+            </section>
+
+        </main>
+
+        <section class="bg-white p-6 rounded-2xl shadow-lg mb-12 fade-in-up" style="animation-delay: 700ms;">
+            <h2 class="text-2xl font-bold mb-8 text-center">تحليل المديونية حسب المندوب</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div>
+                    <p class="text-sm text-slate-500 text-center mb-4">توزيع الديون المتأخرة (+30 يوم)</p>
+                    <div class="bar-chart-container">
+                        <canvas id="sales-rep-chart"></canvas>
+                    </div>
+                </div>
+                <div class="w-full">
+                    <p class="text-sm text-slate-500 text-center mb-4">إجمالي المديونية لكل مندوب</p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="bg-slate-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-right text-xs font-bold text-slate-600 uppercase">المندوب</th>
+                                    <th class="px-4 py-2 text-right text-xs font-bold text-slate-600 uppercase">إجمالي المديونية</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sales-rep-summary-table" class="bg-white divide-y divide-slate-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-12 fade-in-up" style="animation-delay: 800ms;">
+            <h2 class="text-2xl font-bold mb-6 text-center">تقرير الفواتير التفصيلي (Pivot Style)</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 px-2">
+                <div>
+                    <label for="client-filter-input" class="block text-sm font-medium text-slate-700 mb-1">بحث حسب العميل</label>
+                    <input list="client-datalist" id="client-filter-input" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="اكتب اسم العميل...">
+                    <datalist id="client-datalist"></datalist>
+                </div>
+                <div>
+                    <label for="rep-filter" class="block text-sm font-medium text-slate-700 mb-1">تصفية حسب المندوب</label>
+                    <select id="rep-filter" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="all">كل المناديب</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="invoice-search" class="block text-sm font-medium text-slate-700 mb-1">بحث برقم الفاتورة</label>
+                    <input type="text" id="invoice-search" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="ادخل رقم الفاتورة...">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th scope="col" class="w-8"></th>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable" data-sort="customer">العميل <span class="sort-icon">↕️</span></th>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">إجمالي الفواتير</th>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable" data-sort="total">إجمالي المبلغ <span class="sort-icon">↕️</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="pivot-table-body" class="bg-white divide-y divide-slate-200">
+                    </tbody>
+                </table>
+                <p id="no-results" class="text-center py-8 text-slate-500 hidden">لا توجد نتائج مطابقة لبحثك.</p>
+            </div>
+        </section>
+        
+        <section id="bank-balances-section" class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-12 fade-in-up" style="animation-delay: 850ms;">
+            <h2 class="text-2xl font-bold mb-6 text-center">أرصدة البنوك</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 px-2">
+                <div>
+                    <label for="bank-filter" class="block text-sm font-medium text-slate-700 mb-1">تصفية حسب البنك</label>
+                    <select id="bank-filter" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="all">كل البنوك</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="currency-filter" class="block text-sm font-medium text-slate-700 mb-1">تصفية حسب العملة</label>
+                    <select id="currency-filter" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="all">كل العملات</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable-bank" data-sort-bank="Bank">البنك <span class="sort-icon">↕️</span></th>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable-bank" data-sort-bank="Bank Name">اسم الحساب <span class="sort-icon">↕️</span></th>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">رقم الحساب</th>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable-bank" data-sort-bank="Currency">العملة <span class="sort-icon">↕️</span></th>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable-bank" data-sort-bank="Balance">الرصيد <span class="sort-icon">↕️</span></th>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable-bank" data-sort-bank="Outstanding transaction">معاملات معلقة <span class="sort-icon">↕️</span></th>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable-bank" data-sort-bank="Balance in Common Currency">الرصيد بالعملة الموحدة (EGP) <span class="sort-icon">↕️</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="bank-balances-table-body" class="bg-white divide-y divide-slate-200">
+                        </tbody>
+                    <tfoot class="bg-slate-200 font-bold">
+                        <tr>
+                            <td id="bank-total-label" colspan="6" class="px-4 py-4 text-left text-slate-800">الإجمالي العام</td>
+                            <td id="bank-total" class="px-4 py-4 text-right text-lg text-slate-900">0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+
+        <section class="fade-in-up" style="animation-delay: 900ms;">
+            <h2 class="text-3xl font-bold text-center mb-8">خطة العمل المقترحة: خطوتان لاستعادة السيطرة</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 justify-center">
+                <div class="kpi-card bg-white p-6 rounded-2xl shadow-md border-t-4 border-blue-500">
+                    <div class="flex items-center mb-3">
+                        <span class="text-3xl ml-4">🚀</span>
+                        <h3 class="text-xl font-bold">إجراءات فورية</h3>
+                    </div>
+                    <ul class="list-disc list-inside text-slate-600 space-y-2 text-sm">
+                        <li>تشكيل فريق عمل مخصص للتواصل المباشر مع أكبر 5 عملاء.</li>
+                        <li>إيقاف التعامل الآجل معهم فورًا.</li>
+                        <li>عقد اجتماعات عاجلة لوضع جداول سداد ملزمة.</li>
+                    </ul>
+                </div>
+                <div class="kpi-card bg-white p-6 rounded-2xl shadow-md border-t-4 border-green-500">
+                    <div class="flex items-center mb-3">
+                        <span class="text-3xl ml-4">⚙️</span>
+                        <h3 class="text-xl font-bold">إجراءات استدامة</h3>
+                    </div>
+                    <ul class="list-disc list-inside text-slate-600 space-y-2 text-sm">
+                        <li>إعادة هيكلة شروط وحدود الائتمان بناءً على سجل السداد.</li>
+                        <li>لا حدود ائتمانية جديدة إلا بعد تقييم دقيق للمخاطر.</li>
+                        <li>ربط جزء من عمولات المبيعات بنجاح التحصيل.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center mt-12 text-xs text-slate-400">
+            <p id="footer-date">تقرير لجنة متابعة التحصيلات - يونيو 2025</p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordForm = document.getElementById('password-form');
+            const passwordModal = document.getElementById('password-modal');
+            const mainContent = document.getElementById('main-content');
+            const passwordInput = document.getElementById('password-input');
+            const errorMessage = document.getElementById('error-message');
+
+            const PWD_HASH = 'NTU4Mg==';
+
+            passwordForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                if (btoa(passwordInput.value) === PWD_HASH) {
+                    passwordModal.style.display = 'none';
+                    mainContent.classList.remove('blurred');
+                    initializeDashboard();
+                } else {
+                    errorMessage.classList.remove('hidden');
+                    passwordInput.classList.add('border-red-500');
+                    passwordInput.value = '';
+                }
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.shiftKey && e.key === 'J') || (e.ctrlKey && e.key === 'U') || (e.metaKey && e.altKey && e.key === 'I')) {
+                    e.preventDefault();
+                }
+            });
+
+            async function initializeDashboard() {
+                
+                async function fetchCsvData(filePath) {
+                    try {
+                        const response = await fetch(filePath);
+                        if (!response.ok) {
+                            throw new Error(`Network response was not ok: ${response.statusText}`);
+                        }
+                        return await response.text();
+                    } catch (error) {
+                        console.error(`Could not fetch data from ${filePath}:`, error);
+                        mainContent.innerHTML = `<div class="text-center py-20"><h2 class="text-2xl font-bold text-red-600">فشل تحميل البيانات</h2><p class="text-slate-500 mt-2">لا يمكن الوصول للملف ${filePath}. يرجى التأكد من أن الملف موجود في نفس المجلد وأنك تستخدم خادم ويب.</p></div>`;
+                        return null;
+                    }
+                }
+
+                const csvDataText = await fetchCsvData('/.netlify/functions/get-data?sheet=debt');
+                const bankDataCsvText = await fetchCsvData('/.netlify/functions/get-data?sheet=bank');
+
+                if (!csvDataText || !bankDataCsvText) return;
+
+                const numberLocale = 'en-US';
+                const dateLocale = 'en-GB';
+
+                const now = new Date();
+                const formattedDate = new Intl.DateTimeFormat(numberLocale, { year: 'numeric', month: 'long' }).format(now);
+                const fullFormattedDate = `تحليل البيانات حتى تاريخ ${now.toLocaleDateString(dateLocale)}`;
+                document.getElementById('report-date').textContent = fullFormattedDate;
+                document.getElementById('footer-date').textContent = `تقرير لجنة متابعة التحصيلات - ${formattedDate}`;
+
+                function parseCSV(csvText) {
+                    const lines = csvText.trim().split('\n').filter(line => line.trim() !== '');
+                    if (lines.length < 2) return [];
+                    const headers = lines[0].split(',').map(h => h.trim());
+                    const data = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+                        const entry = {};
+                        for (let j = 0; j < headers.length; j++) {
+                            let value = values[j] ? values[j].trim() : '';
+                            if (value.startsWith('"') && value.endsWith('"')) {
+                                value = value.substring(1, value.length - 1).replace(/""/g, '"');
+                            }
+                            entry[headers[j]] = value;
+                        }
+                        data.push(entry);
+                    }
+                    return data;
+                }
+
+                function animateValue(element, start, end, duration, isPercentage = false, isCurrency = true) {
+                    let startTimestamp = null;
+                    const step = (timestamp) => {
+                        if (!startTimestamp) startTimestamp = timestamp;
+                        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                        const currentVal = progress * (end - start) + start;
+                        if (element) {
+                            if (isPercentage) {
+                                element.innerHTML = `${currentVal.toFixed(2)}%`;
+                            } else if (isCurrency) {
+                                element.innerHTML = new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP', maximumFractionDigits: 0 }).format(currentVal);
+                            } else {
+                                element.innerHTML = new Intl.NumberFormat(numberLocale).format(currentVal);
+                            }
+                        }
+                        if (progress < 1) window.requestAnimationFrame(step);
+                    };
+                    window.requestAnimationFrame(step);
+                }
+
+                function processDebtData(invoices) {
+                    let totalReceivables = 0,
+                        overdueAmount = 0,
+                        highRiskDebt = 0;
+                    const agingBuckets = { '0-30': 0, '31-60': 0, '61-90': 0, '91-120': 0, '>120': 0 };
+                    const salesReps = {},
+                        clientTotals = {},
+                        salesRepTotals = {};
+                    invoices.forEach(inv => {
+                        const amount = parseFloat(inv['المبالغ الغير مسددة'].replace(/,/g, '')) || 0;
+                        const days = parseInt(inv['days outstanding']) || 0;
+                        const costCenter = inv['مركز التكلفة'] || 'غير محدد';
+                        totalReceivables += amount;
+                        if (!clientTotals[inv.العميل]) clientTotals[inv.العميل] = 0;
+                        clientTotals[inv.العميل] += amount;
+                        if (!salesReps[costCenter]) salesReps[costCenter] = { '31-60': 0, '61-90': 0, '91-120': 0, '>120': 0 };
+                        if (!salesRepTotals[costCenter]) salesRepTotals[costCenter] = 0;
+                        salesRepTotals[costCenter] += amount;
+                        if (days > 30) overdueAmount += amount;
+                        if (days > 120) {
+                            agingBuckets['>120'] += amount;
+                            highRiskDebt += amount;
+                            salesReps[costCenter]['>120'] += amount;
+                        } else if (days > 90) {
+                            agingBuckets['91-120'] += amount;
+                            highRiskDebt += amount;
+                            salesReps[costCenter]['91-120'] += amount;
+                        } else if (days > 60) {
+                            agingBuckets['61-90'] += amount;
+                            salesReps[costCenter]['61-90'] += amount;
+                        } else if (days > 30) {
+                            agingBuckets['31-60'] += amount;
+                            salesReps[costCenter]['31-60'] += amount;
+                        } else {
+                            agingBuckets['0-30'] += amount;
+                        }
+                    });
+                    const topClients = Object.entries(clientTotals).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, amount]) => ({ name, amount, percentage: (amount / totalReceivables) * 100 }));
+                    return {
+                        totalReceivables,
+                        overdueAmount,
+                        highRiskDebt,
+                        overduePercentage: totalReceivables > 0 ? (overdueAmount / totalReceivables) * 100 : 0,
+                        topClientsPercentage: topClients.reduce((sum, client) => sum + client.percentage, 0),
+                        agingBuckets: {
+                            labels: ['+120 يوم', '90 - 120 يوم', '61 - 90 يوم', '31 - 60 يوم', '0 - 30 يوم'],
+                            data: [agingBuckets['>120'], agingBuckets['91-120'], agingBuckets['61-90'], agingBuckets['31-60'], agingBuckets['0-30']],
+                            colors: ['#b91c1c', '#ef4444', '#f97316', '#f59e0b', '#22c55e']
+                        },
+                        topClients,
+                        salesReps: {
+                            labels: Object.keys(salesReps),
+                            datasets: [{
+                                label: '31-60 يوم',
+                                data: Object.keys(salesReps).map(rep => salesReps[rep]['31-60']),
+                                backgroundColor: '#f59e0b'
+                            }, {
+                                label: '61-90 يوم',
+                                data: Object.keys(salesReps).map(rep => salesReps[rep]['61-90']),
+                                backgroundColor: '#f97316'
+                            }, {
+                                label: '90-120 يوم',
+                                data: Object.keys(salesReps).map(rep => salesReps[rep]['90-120']),
+                                backgroundColor: '#ef4444'
+                            }, {
+                                label: '+120 يوم',
+                                data: Object.keys(salesReps).map(rep => salesReps[rep]['>120']),
+                                backgroundColor: '#b91c1c'
+                            }]
+                        },
+                        salesRepTotals,
+                        invoices: invoices.map(inv => ({
+                            customer: inv.العميل,
+                            costCenter: inv['مركز التكلفة'],
+                            date: inv.التاريخ,
+                            invoiceNumber: inv['رقم الفاتورة'],
+                            daysOutstanding: parseInt(inv['days outstanding']),
+                            status: inv['حالة الفاتورة'],
+                            amount: parseFloat(inv['المبالغ الغير مسددة'].replace(/,/g, ''))
+                        }))
+                    };
+                }
+
+                function processBankData(bankAccounts) {
+                    const totalBalance = bankAccounts.reduce((sum, account) => sum + (parseFloat(account['Balance in Common Currency'].replace(/,/g, '')) || 0), 0);
+                    return {
+                        totalBalance: totalBalance,
+                        accounts: bankAccounts
+                    };
+                }
+
+                const debtReport = processDebtData(parseCSV(csvDataText));
+                const bankReport = processBankData(parseCSV(bankDataCsvText));
+
+                animateValue(document.getElementById('total-bank-balances-kpi'), 0, bankReport.totalBalance, 1500, false, true);
+                animateValue(document.getElementById('overdue-percentage-header'), 0, debtReport.overduePercentage, 1500, true);
+                animateValue(document.getElementById('total-receivables'), 0, debtReport.totalReceivables, 1500, false, true);
+                animateValue(document.getElementById('overdue-amount'), 0, debtReport.overdueAmount, 1500, false, true);
+                animateValue(document.getElementById('high-risk-debt'), 0, debtReport.highRiskDebt, 1500, false, true);
+
+                const bankKpiCard = document.getElementById('bank-kpi-card');
+                const bankBalancesSection = document.getElementById('bank-balances-section');
+                if (bankKpiCard && bankBalancesSection) {
+                    bankKpiCard.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        bankBalancesSection.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    });
+                }
+
+                const clientsListContainer = document.getElementById('top-clients-list');
+                clientsListContainer.innerHTML = '';
+                debtReport.topClients.forEach(client => {
+                    const clientDiv = document.createElement('div');
+                    clientDiv.className = 'kpi-card p-3 rounded-xl bg-slate-50';
+                    clientDiv.innerHTML = `<div class="flex justify-between items-center mb-2"><span class="font-bold text-xs sm:text-sm text-slate-700">${client.name}</span><span class="font-bold text-xs sm:text-sm text-red-700">${new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP', minimumFractionDigits: 0 }).format(client.amount)}</span></div><div class="w-full bg-slate-200 rounded-full h-2"><div class="bg-gradient-to-r from-amber-500 to-red-600 h-2 rounded-full" style="width: ${client.percentage}%"></div></div><p class="text-xs text-slate-500 text-left mt-1">${client.percentage.toFixed(2)}% من الإجمالي</p>`;
+                    clientsListContainer.appendChild(clientDiv);
+                });
+
+                new Chart(document.getElementById('aging-chart').getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: debtReport.agingBuckets.labels,
+                        datasets: [{
+                            data: debtReport.agingBuckets.data,
+                            backgroundColor: debtReport.agingBuckets.colors,
+                            borderColor: '#ffffff',
+                            borderWidth: 4,
+                            hoverOffset: 15
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        family: "'Tajawal', sans-serif"
+                                    },
+                                    padding: 20,
+                                    usePointStyle: true,
+                                    pointStyle: 'rectRounded'
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (c) => `${c.label || ''}: ${new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP' }).format(c.parsed)}`
+                                },
+                                bodyFont: {
+                                    family: "'Tajawal', sans-serif"
+                                },
+                                titleFont: {
+                                    family: "'Tajawal', sans-serif"
+                                },
+                                backgroundColor: '#1e293b',
+                                padding: 10,
+                                cornerRadius: 5
+                            }
+                        },
+                        cutout: '60%'
+                    }
+                });
+                new Chart(document.getElementById('sales-rep-chart').getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: debtReport.salesReps.labels,
+                        datasets: debtReport.salesReps.datasets
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                ticks: {
+                                    callback: (v) => `${v / 1000}k`
+                                }
+                            },
+                            y: {
+                                stacked: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    font: {
+                                        family: "'Tajawal', sans-serif"
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (c) => `${c.dataset.label}: ${new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP' }).format(c.raw)}`
+                                },
+                                bodyFont: {
+                                    family: "'Tajawal', sans-serif"
+                                },
+                                titleFont: {
+                                    family: "'Tajawal', sans-serif"
+                                },
+                                backgroundColor: '#1e293b',
+                                padding: 10,
+                                cornerRadius: 5
+                            }
+                        }
+                    }
+                });
+
+                const salesRepSummaryTable = document.getElementById('sales-rep-summary-table');
+                salesRepSummaryTable.innerHTML = '';
+                Object.entries(debtReport.salesRepTotals).sort((a, b) => b[1] - a[1]).forEach(([rep, total]) => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-50';
+                    row.innerHTML = `<td class="px-4 py-3 text-sm font-medium text-slate-800">${rep}</td><td class="px-4 py-3 text-sm font-semibold text-slate-900">${new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP' }).format(total)}</td>`;
+                    salesRepSummaryTable.appendChild(row);
+                });
+
+                const clientFilterInput = document.getElementById('client-filter-input');
+                const clientDatalist = document.getElementById('client-datalist');
+                const repFilter = document.getElementById('rep-filter');
+                const invoiceSearch = document.getElementById('invoice-search');
+                const pivotTableBody = document.getElementById('pivot-table-body');
+                const noResults = document.getElementById('no-results');
+                let currentSort = {
+                    key: 'total',
+                    order: 'desc'
+                };
+                const uniqueClients = [...new Set(debtReport.invoices.map(item => item.customer))];
+                uniqueClients.sort((a, b) => a.localeCompare(b, 'ar')).forEach(client => {
+                    const option = document.createElement('option');
+                    option.value = client;
+                    clientDatalist.appendChild(option);
+                });
+                const uniqueReps = [...new Set(debtReport.invoices.map(item => item.costCenter))];
+                uniqueReps.sort((a, b) => a.localeCompare(b, 'ar')).forEach(rep => {
+                    const option = document.createElement('option');
+                    option.value = rep;
+                    option.textContent = rep;
+                    repFilter.appendChild(option);
+                });
+
+                function renderPivotTable(data) {
+                    pivotTableBody.innerHTML = '';
+                    noResults.classList.toggle('hidden', data.length > 0);
+                    const groupedByCustomer = data.reduce((acc, inv) => {
+                        if (!acc[inv.customer]) acc[inv.customer] = {
+                            invoices: [],
+                            total: 0
+                        };
+                        acc[inv.customer].invoices.push(inv);
+                        acc[inv.customer].total += inv.amount;
+                        return acc;
+                    }, {});
+                    let sortedGroups = Object.entries(groupedByCustomer);
+                    sortedGroups.sort((a, b) => {
+                        const key = currentSort.key;
+                        if (key === 'customer') {
+                            return currentSort.order === 'asc' ? a[0].localeCompare(b[0], 'ar') : b[0].localeCompare(a[0], 'ar');
+                        } else {
+                            return currentSort.order === 'asc' ? a[1].total - b[1].total : b[1].total - a[1].total;
+                        }
+                    });
+                    sortedGroups.forEach(([customerName, group]) => {
+                        const groupRow = document.createElement('tr');
+                        groupRow.className = 'collapsible-row bg-slate-50 font-bold';
+                        groupRow.innerHTML = `<td class="px-2 py-3"><span class="toggle-icon inline-block transition-transform">▶</span></td> <td class="px-4 py-3">${customerName}</td> <td class="px-4 py-3">${group.invoices.length}</td> <td class="px-4 py-3">${new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP' }).format(group.total)}</td>`;
+                        pivotTableBody.appendChild(groupRow);
+                        const detailWrapper = document.createElement('tr');
+                        detailWrapper.className = `hidden detail-row-wrapper`;
+                        detailWrapper.innerHTML = `<td colspan="4" class="p-2 bg-white"><table class="min-w-full"><thead class="bg-slate-100 text-xs uppercase"><tr><th class="px-2 py-2 text-right">التاريخ</th><th class="px-2 py-2 text-right">رقم الفاتورة</th><th class="px-2 py-2 text-right">أيام التأخير</th><th class="px-2 py-2 text-right">المندوب</th><th class="px-2 py-2 text-right">الحالة</th><th class="px-2 py-2 text-right">المبلغ</th></tr></thead><tbody>${group.invoices.sort((a,b) => b.daysOutstanding - a.daysOutstanding).map(invoice => { const parts = invoice.date.split('/'); const isoDate = new Date(parts[2], parts[1] - 1, parts[0]); const displayDate = isoDate.toLocaleDateString(dateLocale, { year: 'numeric', month: '2-digit', day: '2-digit' }); return `<tr class="border-b border-slate-100"><td class="px-2 py-2 text-sm">${displayDate}</td><td class="px-2 py-2 text-sm font-mono">${invoice.invoiceNumber}</td><td class="px-2 py-2 text-sm font-bold ${invoice.daysOutstanding > 90 ? 'text-red-600' : (invoice.daysOutstanding > 60 ? 'text-orange-600' : 'text-amber-600')}">${invoice.daysOutstanding}</td><td class="px-2 py-2 text-sm text-slate-500">${invoice.costCenter}</td><td class="px-2 py-2 text-xs text-slate-500">${invoice.status}</td><td class="px-2 py-2 text-sm font-semibold">${new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP' }).format(invoice.amount)}</td></tr>`}).join('')}</tbody></table></td>`;
+                        pivotTableBody.appendChild(detailWrapper);
+                        groupRow.addEventListener('click', () => {
+                            groupRow.classList.toggle('open');
+                            detailWrapper.classList.toggle('hidden');
+                        });
+                    });
+                }
+
+                function filterAndSortPivotData() {
+                    let filteredData = [...debtReport.invoices];
+                    if (clientFilterInput.value.trim()) filteredData = filteredData.filter(i => i.customer.includes(clientFilterInput.value.trim()));
+                    if (repFilter.value !== 'all') filteredData = filteredData.filter(i => i.costCenter === repFilter.value);
+                    if (invoiceSearch.value.trim()) {
+                        filteredData = filteredData.filter(i => i.invoiceNumber.includes(invoiceSearch.value.trim()));
+                    }
+                    renderPivotTable(filteredData);
+                }
+                clientFilterInput.addEventListener('input', filterAndSortPivotData);
+                repFilter.addEventListener('change', filterAndSortPivotData);
+                invoiceSearch.addEventListener('input', filterAndSortPivotData);
+                document.querySelectorAll('.sortable').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const sortKey = header.dataset.sort;
+                        currentSort.order = (currentSort.key === sortKey && currentSort.order === 'desc') ? 'asc' : 'desc';
+                        currentSort.key = sortKey;
+                        filterAndSortPivotData();
+                    });
+                });
+
+                const bankTableBody = document.getElementById('bank-balances-table-body');
+                const bankTotalElement = document.getElementById('bank-total');
+                const bankTotalLabelElement = document.getElementById('bank-total-label');
+                const bankFilter = document.getElementById('bank-filter');
+                const currencyFilter = document.getElementById('currency-filter');
+                let currentBankSort = {
+                    key: 'Balance in Common Currency',
+                    order: 'desc'
+                };
+                const uniqueBanks = ['all', ...new Set(bankReport.accounts.map(item => item['Bank']))];
+                const uniqueCurrencies = ['all', ...new Set(bankReport.accounts.map(item => item['Currency']))];
+                bankFilter.innerHTML = uniqueBanks.map(bank => `<option value="${bank}">${bank === 'all' ? 'كل البنوك' : bank}</option>`).join('');
+                currencyFilter.innerHTML = uniqueCurrencies.map(curr => `<option value="${curr}">${curr === 'all' ? 'كل العملات' : curr}</option>`).join('');
+
+                function renderBankTable(dataToRender) {
+                    bankTableBody.innerHTML = '';
+                    dataToRender.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-slate-50';
+                        const currency = item['Currency'].toUpperCase();
+                        let currencyBadgeClass = 'currency-EGP';
+                        if (currency === 'USD') currencyBadgeClass = 'currency-USD';
+                        else if (currency === 'EUR') currencyBadgeClass = 'currency-EUR';
+                        else if (currency === 'GBP') currencyBadgeClass = 'currency-GBP';
+                        row.innerHTML = `<td class="px-4 py-3 text-sm font-medium text-slate-800">${item['Bank']}</td><td class="px-4 py-3 text-sm text-slate-600">${item['Bank Name']}</td><td class="px-4 py-3 text-sm text-slate-500 font-mono">${item['Account Number']}</td><td class="px-4 py-3 text-sm text-center"><span class="font-bold py-1 px-3 rounded-full text-xs ${currencyBadgeClass}">${item['Currency']}</span></td><td class="px-4 py-3 text-sm font-semibold text-slate-700">${new Intl.NumberFormat(numberLocale, {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(parseFloat(String(item['Balance']).replace(/,/g, '')))}</td><td class="px-4 py-3 text-sm font-semibold text-slate-600">${new Intl.NumberFormat(numberLocale, {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(parseFloat(String(item['Outstanding transaction']).replace(/,/g, '')))}</td><td class="px-4 py-3 text-sm font-bold text-slate-900">${new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP' }).format(parseFloat(String(item['Balance in Common Currency']).replace(/,/g, '')))}</td>`;
+                        bankTableBody.appendChild(row);
+                    });
+                    const filteredTotal = dataToRender.reduce((sum, account) => sum + (parseFloat(String(account['Balance in Common Currency']).replace(/,/g, '')) || 0), 0);
+                    bankTotalElement.textContent = new Intl.NumberFormat(numberLocale, {
+                        style: 'currency',
+                        currency: 'EGP'
+                    }).format(filteredTotal);
+                    bankTotalLabelElement.textContent = (bankFilter.value === 'all' && currencyFilter.value === 'all') ? 'الإجمالي العام' : 'إجمالي الفلتر';
+                }
+
+                function filterAndSortBankData() {
+                    let filteredData = [...bankReport.accounts];
+                    const selectedBank = bankFilter.value;
+                    const selectedCurrency = currencyFilter.value;
+                    if (selectedBank !== 'all') {
+                        filteredData = filteredData.filter(i => i.Bank === selectedBank);
+                    }
+                    if (selectedCurrency !== 'all') {
+                        filteredData = filteredData.filter(i => i.Currency === selectedCurrency);
+                    }
+                    filteredData.sort((a, b) => {
+                        const key = currentBankSort.key;
+                        let valA = a[key];
+                        let valB = b[key];
+                        const numericKeys = ['Balance', 'Balance in Common Currency', 'Outstanding transaction'];
+                        if (numericKeys.includes(key)) {
+                            valA = parseFloat(String(valA).replace(/,/g, '')) || 0;
+                            valB = parseFloat(String(valB).replace(/,/g, '')) || 0;
+                        }
+                        if (typeof valA === 'string') return currentBankSort.order === 'asc' ? valA.localeCompare(valB, 'ar') : valB.localeCompare(valA, 'ar');
+                        else return currentBankSort.order === 'asc' ? valA - valB : valB - valA;
+                    });
+                    renderBankTable(filteredData);
+                }
+                bankFilter.addEventListener('change', filterAndSortBankData);
+                currencyFilter.addEventListener('change', filterAndSortBankData);
+                document.querySelectorAll('.sortable-bank').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const sortKey = header.dataset.sortBank;
+                        currentBankSort.order = (currentBankSort.key === sortKey && currentBankSort.order === 'desc') ? 'asc' : 'desc';
+                        currentBankSort.key = sortKey;
+                        filterAndSortBankData();
+                    });
+                });
+
+                filterAndSortPivotData();
+                filterAndSortBankData();
+            }
+        });
+    </script>
+</body>
+</html>
