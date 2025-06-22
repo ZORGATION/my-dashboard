@@ -202,7 +202,7 @@
         <section class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-12 fade-in-up" style="animation-delay: 800ms;">
             <h2 class="text-2xl font-bold mb-6 text-center">تقرير الفواتير التفصيلي (Pivot Style)</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 px-2">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 px-2">
                 <div>
                     <label for="client-filter-input" class="block text-sm font-medium text-slate-700 mb-1">بحث حسب العميل</label>
                     <input list="client-datalist" id="client-filter-input" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="اكتب اسم العميل...">
@@ -221,6 +221,10 @@
                 <div class="text-center md:text-right bg-slate-50 p-2 rounded-lg">
                     <label class="block text-sm font-medium text-slate-700 mb-1">إجمالي العملاء</label>
                     <p id="total-clients-kpi" class="text-3xl font-bold text-blue-600">0</p>
+                </div>
+                <div class="text-center md:text-right bg-slate-50 p-2 rounded-lg">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">إجمالي المبلغ (للفلتر)</label>
+                    <p id="total-clients-amount-kpi" class="text-3xl font-bold text-green-600">0</p>
                 </div>
             </div>
 
@@ -667,6 +671,12 @@
                 function renderPivotTable(data) {
                     pivotTableBody.innerHTML = '';
                     noResults.classList.toggle('hidden', data.length > 0);
+
+                    // التعديل: حساب وعرض إجمالي المبلغ للبيانات المفلترة
+                    const filteredTotalAmount = data.reduce((sum, inv) => sum + inv.amount, 0);
+                    document.getElementById('total-clients-amount-kpi').innerHTML = new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP', maximumFractionDigits: 0 }).format(filteredTotalAmount);
+
+
                     const groupedByCustomer = data.reduce((acc, inv) => {
                         if (!acc[inv.customer]) acc[inv.customer] = {
                             invoices: [],
@@ -678,7 +688,6 @@
                     }, {});
                     let sortedGroups = Object.entries(groupedByCustomer);
 
-                    // التعديل: تحديث عدد العملاء
                     document.getElementById('total-clients-kpi').textContent = sortedGroups.length;
 
                     sortedGroups.sort((a, b) => {
@@ -790,7 +799,7 @@
                 document.querySelectorAll('.sortable-bank').forEach(header => {
                     header.addEventListener('click', () => {
                         const sortKey = header.dataset.sortBank;
-                        currentBankSort.order = (currentBankSort.key === sortKey && currentSort.order === 'desc') ? 'asc' : 'desc';
+                        currentBankSort.order = (currentBankSort.key === sortKey && currentBankSort.order === 'desc') ? 'asc' : 'desc';
                         currentBankSort.key = sortKey;
                         filterAndSortBankData();
                     });
