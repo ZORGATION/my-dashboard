@@ -96,9 +96,8 @@
         .currency-GBP { background-color: #f0fdf4; color: #14532d; }
         .currency-EGP { background-color: #fafafa; color: #3f3f46; }
 
-        /* --- التعديل: إصلاح ستايل الطباعة --- */
         @media print {
-            body > * {
+            body > *:not(.print-area) {
                 visibility: hidden;
             }
             .print-area, .print-area * {
@@ -126,13 +125,17 @@
                 text-align: center;
                 margin-bottom: 20px;
             }
-             /* إخفاء التفاصيل داخل الصفوف عند الطباعة للحصول على ملخص فقط */
+            .toggle-icon, .sort-icon {
+                display: none !important;
+            }
+            /* --- التعديل: المنطق الشرطي للطباعة --- */
+            /* الحالة الافتراضية: إخفاء التفاصيل */
             .detail-row-wrapper {
                 display: none !important;
             }
-            /* إخفاء أيقونات الفرز والأسهم */
-            .toggle-icon, .sort-icon {
-                display: none !important;
+            /* الحالة الخاصة: إظهار التفاصيل إذا كان كلاس print-with-details موجوداً */
+            .print-with-details .detail-row-wrapper {
+                display: table-row !important; /* مهم لإظهار الصف بشكل صحيح في الجدول */
             }
         }
     </style>
@@ -701,6 +704,9 @@
                 const collapseAllBtn = document.getElementById('collapse-all-btn');
                 const printPivotBtn = document.getElementById('print-pivot-btn');
                 const pivotSection = document.getElementById('pivot-report-section');
+                
+                // --- التعديل: إضافة متغير الحالة للطباعة ---
+                let isPrintDetailsExpanded = false;
 
                 let currentSort = {
                     key: 'total',
@@ -761,6 +767,8 @@
                         groupRow.addEventListener('click', () => {
                             groupRow.classList.toggle('open');
                             detailWrapper.classList.toggle('hidden');
+                            // التعديل: إعادة ضبط حالة الطباعة عند التغيير اليدوي
+                            isPrintDetailsExpanded = false;
                         });
                     });
                 }
@@ -791,21 +799,30 @@
                 expandAllBtn.addEventListener('click', () => {
                     document.querySelectorAll('.collapsible-row').forEach(row => row.classList.add('open'));
                     document.querySelectorAll('.detail-row-wrapper').forEach(row => row.classList.remove('hidden'));
+                    // التعديل: ضبط حالة الطباعة عند فتح الكل
+                    isPrintDetailsExpanded = true;
                 });
 
                 collapseAllBtn.addEventListener('click', () => {
                     document.querySelectorAll('.collapsible-row').forEach(row => row.classList.remove('open'));
                     document.querySelectorAll('.detail-row-wrapper').forEach(row => row.classList.add('hidden'));
+                    // التعديل: ضبط حالة الطباعة عند إغلاق الكل
+                    isPrintDetailsExpanded = false;
                 });
                 
-                // --- التعديل: تبسيط حدث الطباعة ---
                 printPivotBtn.addEventListener('click', () => {
+                    // التعديل: التحقق من حالة الطباعة قبل إضافة الكلاس
+                    if (isPrintDetailsExpanded) {
+                        pivotSection.classList.add('print-with-details');
+                    }
                     pivotSection.classList.add('print-area');
                     window.print();
                 });
 
                 window.addEventListener('afterprint', () => {
                     pivotSection.classList.remove('print-area');
+                    // التعديل: التأكد من إزالة كلاس التفاصيل بعد الطباعة
+                    pivotSection.classList.remove('print-with-details');
                 });
 
 
