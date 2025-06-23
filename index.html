@@ -96,19 +96,25 @@
         .currency-GBP { background-color: #f0fdf4; color: #14532d; }
         .currency-EGP { background-color: #fafafa; color: #3f3f46; }
 
-        /* --- التعديل: إصلاح ستايل الطباعة ليعمل على جميع الأجهزة --- */
+        /* --- التعديل النهائي: إصلاح ستايل الطباعة --- */
         @media print {
             body.is-printing > * {
-                display: none;
+                display: none !important;
+            }
+            body.is-printing #main-content {
+                display: block !important;
+            }
+            body.is-printing #main-content > * {
+                display: none !important;
             }
             body.is-printing #pivot-report-section {
                 display: block !important;
             }
-            .no-print {
-                display: none !important;
-            }
             #print-header-kpis {
                 display: block !important;
+            }
+            .no-print {
+                display: none !important;
             }
             table {
                 width: 100%;
@@ -127,8 +133,6 @@
                 padding: 8px;
             }
             h2 {
-                text-align: center;
-                margin-bottom: 20px;
                 page-break-after: avoid;
             }
             .toggle-icon, .sort-icon {
@@ -137,7 +141,7 @@
             .detail-row-wrapper {
                 display: none !important;
             }
-            .is-printing.print-with-details .detail-row-wrapper {
+            body.is-printing.print-with-details .detail-row-wrapper {
                 display: table-row !important;
             }
         }
@@ -245,69 +249,71 @@
             </div>
         </section>
 
-        <section id="pivot-report-section" class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-12 fade-in-up" style="animation-delay: 800ms;">
-            <h2 class="text-2xl font-bold mb-6 text-center">تقرير الفواتير التفصيلي (Pivot Style)</h2>
-            
-            <div id="print-header-kpis" class="hidden">
-                <div style="display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 15px; font-size: 16px;">
-                    <div>
-                        <strong>إجمالي العملاء:</strong>
-                        <span id="print-total-clients" style="font-weight: bold; margin-right: 5px;">0</span>
-                    </div>
-                    <div>
-                        <strong>إجمالي المبلغ:</strong>
-                        <span id="print-total-amount" style="font-weight: bold; margin-right: 5px;">0</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 px-2 items-center no-print">
-                <div class="md:col-span-1">
-                    <label for="client-filter-input" class="block text-sm font-medium text-slate-700 mb-1">بحث حسب العميل</label>
-                    <input list="client-datalist" id="client-filter-input" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="اكتب اسم العميل...">
-                    <datalist id="client-datalist"></datalist>
-                </div>
-                <div class="md:col-span-1">
-                    <label for="rep-filter" class="block text-sm font-medium text-slate-700 mb-1">تصفية حسب المندوب</label>
-                    <select id="rep-filter" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="all">كل المناديب</option>
-                    </select>
-                </div>
-                <div class="md:col-span-1">
-                    <label for="invoice-search" class="block text-sm font-medium text-slate-700 mb-1">بحث برقم الفاتورة</label>
-                    <input type="text" id="invoice-search" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="ادخل رقم الفاتورة...">
-                </div>
-                <div class="md:col-span-1">
-                    <div class="text-center bg-slate-50 p-2 rounded-lg mb-2">
-                        <label class="block text-sm font-medium text-slate-700">إجمالي العملاء</label>
-                        <p id="total-clients-kpi" class="text-2xl font-bold text-blue-600">0</p>
-                    </div>
-                    <div class="text-center bg-slate-50 p-2 rounded-lg">
-                        <label class="block text-sm font-medium text-slate-700">إجمالي المبلغ</label>
-                        <p id="total-clients-amount-kpi" class="text-xl font-bold text-green-600">0</p>
+        <section id="pivot-report-section" class="p-4 sm:p-6" style="animation-delay: 800ms;">
+            <div class="bg-white rounded-2xl shadow-lg p-4">
+                <h2 class="text-2xl font-bold mb-6 text-center">تقرير الفواتير التفصيلي (Pivot Style)</h2>
+                
+                <div id="print-header-kpis" class="hidden">
+                    <div style="display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 15px; font-size: 16px;">
+                        <div>
+                            <strong>إجمالي العملاء:</strong>
+                            <span id="print-total-clients" style="font-weight: bold; margin-right: 5px;">0</span>
+                        </div>
+                        <div>
+                            <strong>إجمالي المبلغ:</strong>
+                            <span id="print-total-amount" style="font-weight: bold; margin-right: 5px;">0</span>
+                        </div>
                     </div>
                 </div>
-                <div class="md:col-span-1 flex flex-col justify-center">
-                     <button id="expand-all-btn" class="w-full bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition">فتح الكل</button>
-                     <button id="collapse-all-btn" class="w-full bg-slate-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-slate-600 transition mt-2">إغلاق الكل</button>
-                     <button id="print-pivot-btn" class="w-full bg-gray-700 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-gray-800 transition mt-2">🖨️ طباعة التقرير</button>
+                
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 px-2 items-center no-print">
+                    <div class="md:col-span-1">
+                        <label for="client-filter-input" class="block text-sm font-medium text-slate-700 mb-1">بحث حسب العميل</label>
+                        <input list="client-datalist" id="client-filter-input" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="اكتب اسم العميل...">
+                        <datalist id="client-datalist"></datalist>
+                    </div>
+                    <div class="md:col-span-1">
+                        <label for="rep-filter" class="block text-sm font-medium text-slate-700 mb-1">تصفية حسب المندوب</label>
+                        <select id="rep-filter" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="all">كل المناديب</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-1">
+                        <label for="invoice-search" class="block text-sm font-medium text-slate-700 mb-1">بحث برقم الفاتورة</label>
+                        <input type="text" id="invoice-search" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="ادخل رقم الفاتورة...">
+                    </div>
+                    <div class="md:col-span-1">
+                        <div class="text-center bg-slate-50 p-2 rounded-lg mb-2">
+                            <label class="block text-sm font-medium text-slate-700">إجمالي العملاء</label>
+                            <p id="total-clients-kpi" class="text-2xl font-bold text-blue-600">0</p>
+                        </div>
+                        <div class="text-center bg-slate-50 p-2 rounded-lg">
+                            <label class="block text-sm font-medium text-slate-700">إجمالي المبلغ</label>
+                            <p id="total-clients-amount-kpi" class="text-xl font-bold text-green-600">0</p>
+                        </div>
+                    </div>
+                    <div class="md:col-span-1 flex flex-col justify-center">
+                         <button id="expand-all-btn" class="w-full bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition">فتح الكل</button>
+                         <button id="collapse-all-btn" class="w-full bg-slate-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-slate-600 transition mt-2">إغلاق الكل</button>
+                         <button id="print-pivot-btn" class="w-full bg-gray-700 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-gray-800 transition mt-2">🖨️ طباعة التقرير</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full">
-                    <thead class="bg-slate-100">
-                        <tr>
-                            <th scope="col" class="w-8"></th>
-                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable" data-sort="customer">العميل <span class="sort-icon">↕️</span></th>
-                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">إجمالي الفواتير</th>
-                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable" data-sort="total">إجمالي المبلغ <span class="sort-icon">↕️</span></th>
-                        </tr>
-                    </thead>
-                    <tbody id="pivot-table-body" class="bg-white divide-y divide-slate-200">
-                    </tbody>
-                </table>
-                <p id="no-results" class="text-center py-8 text-slate-500 hidden">لا توجد نتائج مطابقة لبحثك.</p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-slate-100">
+                            <tr>
+                                <th scope="col" class="w-8"></th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable" data-sort="customer">العميل <span class="sort-icon">↕️</span></th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">إجمالي الفواتير</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable" data-sort="total">إجمالي المبلغ <span class="sort-icon">↕️</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="pivot-table-body" class="bg-white divide-y divide-slate-200">
+                        </tbody>
+                    </table>
+                    <p id="no-results" class="text-center py-8 text-slate-500 hidden">لا توجد نتائج مطابقة لبحثك.</p>
+                </div>
             </div>
         </section>
         
@@ -822,7 +828,6 @@
                     isPrintDetailsExpanded = false;
                 });
                 
-                // --- التعديل: إصلاح حدث الطباعة ---
                 printPivotBtn.addEventListener('click', () => {
                     const body = document.body;
                     if (isPrintDetailsExpanded) {
