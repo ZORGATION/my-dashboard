@@ -9,8 +9,6 @@
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.autotable.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
@@ -130,19 +128,23 @@
             .toggle-icon, .sort-icon {
                 display: none !important;
             }
+            /* --- التعديل: المنطق الشرطي للطباعة --- */
+            /* الحالة الافتراضية: إخفاء التفاصيل */
             .detail-row-wrapper {
                 display: none !important;
             }
+            /* الحالة الخاصة: إظهار التفاصيل إذا كان كلاس print-with-details موجوداً */
             .print-with-details .detail-row-wrapper {
-                display: table-row !important;
+                display: table-row !important; /* مهم لإظهار الصف بشكل صحيح في الجدول */
             }
+            /* --- تعديل إظهار رأس الطباعة --- */
             #print-header {
-                display: block !important;
+                display: block !important; /* لإظهار العنصر عند الطباعة */
                 text-align: center;
                 margin-bottom: 20px;
-                font-size: 1.25rem;
-                font-weight: 700;
-                color: #1e293b;
+                font-size: 1.25rem; /* حجم خط مناسب */
+                font-weight: 700; /* خط عريض */
+                color: #1e293b; /* slate-800 */
             }
         }
     </style>
@@ -281,21 +283,18 @@
                 <div class="md:col-span-1 flex flex-col justify-center">
                      <button id="expand-all-btn" class="w-full bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition">فتح الكل</button>
                      <button id="collapse-all-btn" class="w-full bg-slate-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-slate-600 transition mt-2">إغلاق الكل</button>
-                     <div class="flex items-center space-x-2 mt-2 rtl:space-x-reverse">
-                         <button id="print-pivot-btn" class="w-1/2 bg-gray-600 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-gray-700 transition">🖨️ طباعة</button>
-                         <button id="pdf-pivot-btn" class="w-1/2 bg-red-800 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-red-900 transition">📄 PDF</button>
-                     </div>
+                     <button id="print-pivot-btn" class="w-full bg-gray-700 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-gray-800 transition mt-2">🖨️ طباعة التقرير</button>
                 </div>
-                </div>
+            </div>
 
             <div id="print-header" class="hidden"></div>
 
             <div class="overflow-x-auto">
-                <table id="pivot-main-table" class="min-w-full">
+                <table class="min-w-full">
                     <thead class="bg-slate-100">
                         <tr>
                             <th scope="col" class="w-8"></th>
-                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable" data-sort="customer">العميل</th>
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable" data-sort="customer">العميل <span class="sort-icon">↕️</span></th>
                             <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">إجمالي الفواتير</th>
                             <th scope="col" class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider sortable" data-sort="total">إجمالي المبلغ <span class="sort-icon">↕️</span></th>
                         </tr>
@@ -386,7 +385,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ... الكود الخاص بكلمة المرور يبقى كما هو ...
             const passwordForm = document.getElementById('password-form');
             const passwordModal = document.getElementById('password-modal');
             const mainContent = document.getElementById('main-content');
@@ -416,7 +414,6 @@
 
             async function initializeDashboard() {
                 
-                // ... كل دوال التهيئة ومعالجة البيانات تبقى كما هي ...
                 async function fetchCsvData(filePath) {
                     try {
                         const response = await fetch(filePath);
@@ -717,7 +714,6 @@
                 const expandAllBtn = document.getElementById('expand-all-btn');
                 const collapseAllBtn = document.getElementById('collapse-all-btn');
                 const printPivotBtn = document.getElementById('print-pivot-btn');
-                const pdfPivotBtn = document.getElementById('pdf-pivot-btn'); // تعريف زر الـ PDF
                 const pivotSection = document.getElementById('pivot-report-section');
                 
                 let isPrintDetailsExpanded = false;
@@ -825,11 +821,13 @@
                     if (isPrintDetailsExpanded) {
                         pivotSection.classList.add('print-with-details');
                     }
+                    
                     const printHeader = document.getElementById('print-header');
                     const totalAmountKPI = document.getElementById('total-clients-amount-kpi');
                     if (printHeader && totalAmountKPI) {
                         printHeader.innerHTML = `إجمالي المبلغ المحدد: ${totalAmountKPI.innerHTML}`;
                     }
+
                     pivotSection.classList.add('print-area');
                     window.print();
                 });
@@ -837,99 +835,14 @@
                 window.addEventListener('afterprint', () => {
                     pivotSection.classList.remove('print-area');
                     pivotSection.classList.remove('print-with-details');
+
                     const printHeader = document.getElementById('print-header');
                     if (printHeader) {
                         printHeader.innerHTML = ''; 
                     }
                 });
 
-                pdfPivotBtn.addEventListener('click', function() {
-                    this.textContent = 'جاري التنزيل...';
-                    this.disabled = true;
 
-                    try {
-                        // 1. تعريف الخط العربي مباشرة كنص Base64 (الحل الجديد)
-                        // هذا النص الطويل هو ملف الخط مضمناً في الكود
-                        const amiriFontBase64 = 'AAEAAAARAQAABAAQRFNJRwAAAAEAAAAAAAABAAAAREVG...'; // ملاحظة: النص الفعلي أطول بكثير، هذا مجرد مثال. سيتم تضمين النص الكامل في الكود أدناه.
-                        
-                        const { jsPDF } = window.jspdf;
-                        const doc = new jsPDF();
-
-                        // 2. إضافة الخط المضمن إلى ملف الـ PDF
-                        doc.addFileToVFS('Amiri-Regular.ttf', amiriFontBase64);
-                        doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
-                        doc.setFont('Amiri');
-
-                        // 3. إضافة العنوان والإجمالي
-                        const title = 'تقرير الفواتير التفصيلي';
-                        const totalAmount = document.getElementById('total-clients-amount-kpi').textContent;
-                        const totalText = `إجمالي المبلغ المحدد: ${totalAmount}`;
-                        
-                        doc.setFontSize(18);
-                        doc.text(title, doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
-                        doc.setFontSize(12);
-                        doc.text(totalText, doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
-
-                        // 4. بناء بيانات الجدول
-                        const head = [['إجمالي المبلغ', 'إجمالي الفواتير', 'العميل']];
-                        const body = [];
-                        
-                        const mainRows = pivotTableBody.querySelectorAll('.collapsible-row');
-                        mainRows.forEach(row => {
-                            const cells = row.querySelectorAll('td');
-                            const rowData = [cells[3].textContent.trim(), cells[2].textContent.trim(), cells[1].textContent.trim()];
-                            body.push(rowData);
-
-                            if (row.classList.contains('open') || isPrintDetailsExpanded) {
-                                const detailRow = row.nextElementSibling;
-                                if (detailRow && detailRow.classList.contains('detail-row-wrapper')) {
-                                    const subHeader = [{ content: 'المبلغ', styles: { fontStyle: 'bold', fillColor: '#f0f0f0' } }, { content: 'الحالة', styles: { fontStyle: 'bold', fillColor: '#f0f0f0' } }, { content: 'المندوب', styles: { fontStyle: 'bold', fillColor: '#f0f0f0' } }, { content: 'أيام التأخير', styles: { fontStyle: 'bold', fillColor: '#f0f0f0' } }, { content: 'رقم الفاتورة', styles: { fontStyle: 'bold', fillColor: '#f0f0f0' } }, { content: 'التاريخ', styles: { fontStyle: 'bold', fillColor: '#f0f0f0' } }];
-                                    body.push(subHeader.reverse());
-
-                                    const detailTableRows = detailRow.querySelectorAll('tbody tr');
-                                    detailTableRows.forEach(subRow => {
-                                        const subCells = subRow.querySelectorAll('td');
-                                        const subRowData = Array.from(subCells).map(cell => cell.textContent.trim());
-                                        body.push(subRowData.reverse());
-                                    });
-                                }
-                            }
-                        });
-
-                        // 5. إنشاء الجدول في الـ PDF
-                        doc.autoTable({
-                            head: head,
-                            body: body,
-                            startY: 30,
-                            theme: 'grid',
-                            styles: {
-                                font: 'Amiri',
-                                halign: 'right',
-                                cellPadding: 2,
-                                fontSize: 8
-                            },
-                            headStyles: {
-                                fillColor: [41, 128, 185],
-                                textColor: 255,
-                                fontStyle: 'bold'
-                            }
-                        });
-
-                        // 6. حفظ الملف
-                        const reportDate = new Date().toISOString().slice(0, 10);
-                        doc.save(`pivot_report_${reportDate}.pdf`);
-
-                    } catch (error) {
-                        console.error("فشل توليد ملف PDF:", error);
-                        alert("عذراً، حدث خطأ أثناء توليد ملف PDF. يرجى المحاولة مرة أخرى.");
-                    } finally {
-                        this.textContent = '📄 PDF';
-                        this.disabled = false;
-                    }
-                });
-                // ▲▲▲ انتهى الكود الجديد للدالة ▲▲▲
-
-                // ... بقية دوال فلترة وترتيب جدول البنوك تبقى كما هي ...
                 const bankTableBody = document.getElementById('bank-balances-table-body');
                 const bankTotalElement = document.getElementById('bank-total');
                 const bankTotalLabelElement = document.getElementById('bank-total-label');
