@@ -96,31 +96,26 @@
         .currency-GBP { background-color: #f0fdf4; color: #14532d; }
         .currency-EGP { background-color: #fafafa; color: #3f3f46; }
 
-        /* --- التعديل النهائي للطباعة --- */
         @media print {
-            body.is-printing > * {
-                display: none !important;
+            body > *:not(.print-area) {
+                visibility: hidden;
             }
-            body.is-printing #main-content {
-                display: block !important;
+            .print-area, .print-area * {
+                visibility: visible;
             }
-            body.is-printing #main-content > * {
-                display: none !important;
-            }
-            body.is-printing #pivot-report-section {
-                display: block !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                box-shadow: none !important;
-            }
-            #pivot-report-section h2 {
-                margin: 0 0 15px 0 !important;
-            }
-            #print-header-kpis {
-                display: block !important;
+            .print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 20px;
             }
             .no-print {
                 display: none !important;
+            }
+            /* --- التعديل: إظهار رأس الطباعة --- */
+            #print-header-kpis {
+                display: block !important;
             }
             table {
                 width: 100%;
@@ -131,15 +126,13 @@
                 page-break-inside: avoid;
                 page-break-after: auto;
             }
-            thead {
-                display: table-header-group;
-            }
             th, td {
-                border: 1px solid #666;
-                padding: 5px;
+                border: 1px solid #ddd;
+                padding: 8px;
             }
             h2 {
-                page-break-after: avoid;
+                text-align: center;
+                margin-bottom: 20px;
             }
             .toggle-icon, .sort-icon {
                 display: none !important;
@@ -147,7 +140,7 @@
             .detail-row-wrapper {
                 display: none !important;
             }
-            body.is-printing.print-with-details .detail-row-wrapper {
+            .print-with-details .detail-row-wrapper {
                 display: table-row !important;
             }
         }
@@ -655,7 +648,7 @@
                                 titleFont: {
                                     family: "'Tajawal', sans-serif"
                                 },
-                                backgroundColor: '#1e2G293b',
+                                backgroundColor: '#1e293b',
                                 padding: 10,
                                 cornerRadius: 5
                             }
@@ -729,6 +722,7 @@
                 const expandAllBtn = document.getElementById('expand-all-btn');
                 const collapseAllBtn = document.getElementById('collapse-all-btn');
                 const printPivotBtn = document.getElementById('print-pivot-btn');
+                const pivotSection = document.getElementById('pivot-report-section');
                 
                 let isPrintDetailsExpanded = false;
                 let currentSort = {
@@ -767,6 +761,7 @@
                     const clientCount = sortedGroups.length;
                     document.getElementById('total-clients-kpi').textContent = clientCount;
 
+                    // --- التعديل: تحديث أرقام رأس الطباعة ---
                     document.getElementById('print-total-clients').textContent = clientCount;
                     document.getElementById('print-total-amount').innerHTML = new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP', maximumFractionDigits: 0 }).format(filteredTotalAmount);
 
@@ -833,18 +828,16 @@
                 });
                 
                 printPivotBtn.addEventListener('click', () => {
-                    const body = document.body;
                     if (isPrintDetailsExpanded) {
-                        body.classList.add('print-with-details');
+                        pivotSection.classList.add('print-with-details');
                     }
-                    body.classList.add('is-printing');
+                    pivotSection.classList.add('print-area');
                     window.print();
                 });
 
                 window.addEventListener('afterprint', () => {
-                    const body = document.body;
-                    body.classList.remove('is-printing');
-                    body.classList.remove('print-with-details');
+                    pivotSection.classList.remove('print-area');
+                    pivotSection.classList.remove('print-with-details');
                 });
 
 
