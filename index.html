@@ -202,19 +202,19 @@
         <section class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-12 fade-in-up" style="animation-delay: 800ms;">
             <h2 class="text-2xl font-bold mb-6 text-center">تقرير الفواتير التفصيلي (Pivot Style)</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 px-2">
-                <div>
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6 px-2">
+                <div class="md:col-span-1">
                     <label for="client-filter-input" class="block text-sm font-medium text-slate-700 mb-1">بحث حسب العميل</label>
                     <input list="client-datalist" id="client-filter-input" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="اكتب اسم العميل...">
                     <datalist id="client-datalist"></datalist>
                 </div>
-                <div>
+                <div class="md:col-span-1">
                     <label for="rep-filter" class="block text-sm font-medium text-slate-700 mb-1">تصفية حسب المندوب</label>
                     <select id="rep-filter" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <option value="all">كل المناديب</option>
                     </select>
                 </div>
-                <div>
+                <div class="md:col-span-1">
                     <label for="invoice-search" class="block text-sm font-medium text-slate-700 mb-1">بحث برقم الفاتورة</label>
                     <input type="text" id="invoice-search" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="ادخل رقم الفاتورة...">
                 </div>
@@ -225,6 +225,10 @@
                 <div class="text-center md:text-right bg-slate-50 p-2 rounded-lg">
                     <label class="block text-sm font-medium text-slate-700 mb-1">إجمالي المبلغ (للفلتر)</label>
                     <p id="total-clients-amount-kpi" class="text-3xl font-bold text-green-600">0</p>
+                </div>
+                <div class="flex flex-col justify-center">
+                     <button id="expand-all-btn" class="w-full bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition">فتح الكل</button>
+                     <button id="collapse-all-btn" class="w-full bg-slate-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-slate-600 transition mt-1">إغلاق الكل</button>
                 </div>
             </div>
 
@@ -650,6 +654,9 @@
                 const invoiceSearch = document.getElementById('invoice-search');
                 const pivotTableBody = document.getElementById('pivot-table-body');
                 const noResults = document.getElementById('no-results');
+                const expandAllBtn = document.getElementById('expand-all-btn');
+                const collapseAllBtn = document.getElementById('collapse-all-btn');
+                
                 let currentSort = {
                     key: 'total',
                     order: 'desc'
@@ -672,7 +679,6 @@
                     pivotTableBody.innerHTML = '';
                     noResults.classList.toggle('hidden', data.length > 0);
 
-                    // التعديل: حساب وعرض إجمالي المبلغ للبيانات المفلترة
                     const filteredTotalAmount = data.reduce((sum, inv) => sum + inv.amount, 0);
                     document.getElementById('total-clients-amount-kpi').innerHTML = new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP', maximumFractionDigits: 0 }).format(filteredTotalAmount);
 
@@ -723,9 +729,11 @@
                     }
                     renderPivotTable(filteredData);
                 }
+                
                 clientFilterInput.addEventListener('input', filterAndSortPivotData);
                 repFilter.addEventListener('change', filterAndSortPivotData);
                 invoiceSearch.addEventListener('input', filterAndSortPivotData);
+                
                 document.querySelectorAll('.sortable').forEach(header => {
                     header.addEventListener('click', () => {
                         const sortKey = header.dataset.sort;
@@ -734,6 +742,18 @@
                         filterAndSortPivotData();
                     });
                 });
+                
+                // التعديل: إضافة الأحداث لأزرار فتح/إغلاق الكل
+                expandAllBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.collapsible-row').forEach(row => row.classList.add('open'));
+                    document.querySelectorAll('.detail-row-wrapper').forEach(row => row.classList.remove('hidden'));
+                });
+
+                collapseAllBtn.addEventListener('click', () => {
+                    document.querySelectorAll('.collapsible-row').forEach(row => row.classList.remove('open'));
+                    document.querySelectorAll('.detail-row-wrapper').forEach(row => row.classList.add('hidden'));
+                });
+
 
                 const bankTableBody = document.getElementById('bank-balances-table-body');
                 const bankTotalElement = document.getElementById('bank-total');
