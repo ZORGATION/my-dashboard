@@ -96,6 +96,7 @@
         .currency-GBP { background-color: #f0fdf4; color: #14532d; }
         .currency-EGP { background-color: #fafafa; color: #3f3f46; }
 
+        /* --- التعديل النهائي للطباعة --- */
         @media print {
             body.is-printing > * {
                 display: none !important;
@@ -108,10 +109,12 @@
             }
             body.is-printing #pivot-report-section {
                 display: block !important;
-                /* --- التعديل: إلغاء الهوامش والظلال عند الطباعة --- */
                 padding: 0 !important;
                 margin: 0 !important;
                 box-shadow: none !important;
+            }
+            #pivot-report-section h2 {
+                margin: 0 0 15px 0 !important;
             }
             #print-header-kpis {
                 display: block !important;
@@ -132,8 +135,8 @@
                 display: table-header-group;
             }
             th, td {
-                border: 1px solid #ccc;
-                padding: 8px;
+                border: 1px solid #666;
+                padding: 5px;
             }
             h2 {
                 page-break-after: avoid;
@@ -652,7 +655,7 @@
                                 titleFont: {
                                     family: "'Tajawal', sans-serif"
                                 },
-                                backgroundColor: '#1e293b',
+                                backgroundColor: '#1e2G293b',
                                 padding: 10,
                                 cornerRadius: 5
                             }
