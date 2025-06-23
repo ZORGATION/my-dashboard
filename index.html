@@ -113,18 +113,9 @@
             .no-print {
                 display: none !important;
             }
-            /* --- التعديل: إظهار رأس الطباعة --- */
-            #print-header-kpis {
-                display: block !important;
-            }
             table {
                 width: 100%;
                 border-collapse: collapse;
-                page-break-inside: auto;
-            }
-            tr {
-                page-break-inside: avoid;
-                page-break-after: auto;
             }
             th, td {
                 border: 1px solid #ddd;
@@ -137,11 +128,14 @@
             .toggle-icon, .sort-icon {
                 display: none !important;
             }
+            /* --- التعديل: المنطق الشرطي للطباعة --- */
+            /* الحالة الافتراضية: إخفاء التفاصيل */
             .detail-row-wrapper {
                 display: none !important;
             }
+            /* الحالة الخاصة: إظهار التفاصيل إذا كان كلاس print-with-details موجوداً */
             .print-with-details .detail-row-wrapper {
-                display: table-row !important;
+                display: table-row !important; /* مهم لإظهار الصف بشكل صحيح في الجدول */
             }
         }
     </style>
@@ -250,19 +244,6 @@
 
         <section id="pivot-report-section" class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-12 fade-in-up" style="animation-delay: 800ms;">
             <h2 class="text-2xl font-bold mb-6 text-center">تقرير الفواتير التفصيلي (Pivot Style)</h2>
-            
-            <div id="print-header-kpis" class="hidden">
-                <div style="display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 15px; font-size: 16px;">
-                    <div>
-                        <strong>إجمالي العملاء:</strong>
-                        <span id="print-total-clients" style="font-weight: bold; margin-right: 5px;">0</span>
-                    </div>
-                    <div>
-                        <strong>إجمالي المبلغ:</strong>
-                        <span id="print-total-amount" style="font-weight: bold; margin-right: 5px;">0</span>
-                    </div>
-                </div>
-            </div>
             
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 px-2 items-center no-print">
                 <div class="md:col-span-1">
@@ -724,7 +705,9 @@
                 const printPivotBtn = document.getElementById('print-pivot-btn');
                 const pivotSection = document.getElementById('pivot-report-section');
                 
+                // --- التعديل: إضافة متغير الحالة للطباعة ---
                 let isPrintDetailsExpanded = false;
+
                 let currentSort = {
                     key: 'total',
                     order: 'desc'
@@ -749,22 +732,20 @@
 
                     const filteredTotalAmount = data.reduce((sum, inv) => sum + inv.amount, 0);
                     document.getElementById('total-clients-amount-kpi').innerHTML = new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP', maximumFractionDigits: 0 }).format(filteredTotalAmount);
-                    
+
+
                     const groupedByCustomer = data.reduce((acc, inv) => {
-                        if (!acc[inv.customer]) acc[inv.customer] = { invoices: [], total: 0 };
+                        if (!acc[inv.customer]) acc[inv.customer] = {
+                            invoices: [],
+                            total: 0
+                        };
                         acc[inv.customer].invoices.push(inv);
                         acc[inv.customer].total += inv.amount;
                         return acc;
                     }, {});
                     let sortedGroups = Object.entries(groupedByCustomer);
 
-                    const clientCount = sortedGroups.length;
-                    document.getElementById('total-clients-kpi').textContent = clientCount;
-
-                    // --- التعديل: تحديث أرقام رأس الطباعة ---
-                    document.getElementById('print-total-clients').textContent = clientCount;
-                    document.getElementById('print-total-amount').innerHTML = new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP', maximumFractionDigits: 0 }).format(filteredTotalAmount);
-
+                    document.getElementById('total-clients-kpi').textContent = sortedGroups.length;
 
                     sortedGroups.sort((a, b) => {
                         const key = currentSort.key;
@@ -774,7 +755,6 @@
                             return currentSort.order === 'asc' ? a[1].total - b[1].total : b[1].total - a[1].total;
                         }
                     });
-
                     sortedGroups.forEach(([customerName, group]) => {
                         const groupRow = document.createElement('tr');
                         groupRow.className = 'collapsible-row bg-slate-50 font-bold';
@@ -787,6 +767,7 @@
                         groupRow.addEventListener('click', () => {
                             groupRow.classList.toggle('open');
                             detailWrapper.classList.toggle('hidden');
+                            // التعديل: إعادة ضبط حالة الطباعة عند التغيير اليدوي
                             isPrintDetailsExpanded = false;
                         });
                     });
@@ -818,16 +799,19 @@
                 expandAllBtn.addEventListener('click', () => {
                     document.querySelectorAll('.collapsible-row').forEach(row => row.classList.add('open'));
                     document.querySelectorAll('.detail-row-wrapper').forEach(row => row.classList.remove('hidden'));
+                    // التعديل: ضبط حالة الطباعة عند فتح الكل
                     isPrintDetailsExpanded = true;
                 });
 
                 collapseAllBtn.addEventListener('click', () => {
                     document.querySelectorAll('.collapsible-row').forEach(row => row.classList.remove('open'));
                     document.querySelectorAll('.detail-row-wrapper').forEach(row => row.classList.add('hidden'));
+                    // التعديل: ضبط حالة الطباعة عند إغلاق الكل
                     isPrintDetailsExpanded = false;
                 });
                 
                 printPivotBtn.addEventListener('click', () => {
+                    // التعديل: التحقق من حالة الطباعة قبل إضافة الكلاس
                     if (isPrintDetailsExpanded) {
                         pivotSection.classList.add('print-with-details');
                     }
@@ -837,6 +821,7 @@
 
                 window.addEventListener('afterprint', () => {
                     pivotSection.classList.remove('print-area');
+                    // التعديل: التأكد من إزالة كلاس التفاصيل بعد الطباعة
                     pivotSection.classList.remove('print-with-details');
                 });
 
