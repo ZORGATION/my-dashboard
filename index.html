@@ -96,28 +96,23 @@
         .currency-GBP { background-color: #f0fdf4; color: #14532d; }
         .currency-EGP { background-color: #fafafa; color: #3f3f46; }
 
-        /* --- التعديل: إضافة ستايل الطباعة --- */
+        /* --- التعديل: إصلاح ستايل الطباعة --- */
         @media print {
-            body > *:not(.print-area) {
-                display: none;
+            body > * {
+                visibility: hidden;
+            }
+            .print-area, .print-area * {
+                visibility: visible;
             }
             .print-area {
-                display: block !important;
                 position: absolute;
-                top: 20px;
-                left: 20px;
-                right: 20px;
-                width: auto;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 20px;
             }
             .no-print {
                 display: none !important;
-            }
-            /* إعادة تعيين الألوان والظلال للطباعة */
-            * {
-                background: transparent !important;
-                color: #000 !important;
-                box-shadow: none !important;
-                text-shadow: none !important;
             }
             table {
                 width: 100%;
@@ -131,12 +126,20 @@
                 text-align: center;
                 margin-bottom: 20px;
             }
+             /* إخفاء التفاصيل داخل الصفوف عند الطباعة للحصول على ملخص فقط */
+            .detail-row-wrapper {
+                display: none !important;
+            }
+            /* إخفاء أيقونات الفرز والأسهم */
+            .toggle-icon, .sort-icon {
+                display: none !important;
+            }
         }
     </style>
 </head>
 <body class="text-slate-800" oncontextmenu="return false;">
 
-    <div id="password-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+    <div id="password-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 no-print">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
             <h2 class="text-2xl font-bold mb-4">الرجاء إدخال كلمة المرور</h2>
             <p class="text-sm text-slate-500 mb-6">هذا التقرير محمي. أدخل كلمة المرور للمتابعة.</p>
@@ -795,15 +798,13 @@
                     document.querySelectorAll('.detail-row-wrapper').forEach(row => row.classList.add('hidden'));
                 });
                 
-                // --- التعديل: إضافة حدث الطباعة ---
+                // --- التعديل: تبسيط حدث الطباعة ---
                 printPivotBtn.addEventListener('click', () => {
-                    document.body.classList.add('print-area');
                     pivotSection.classList.add('print-area');
                     window.print();
                 });
 
                 window.addEventListener('afterprint', () => {
-                    document.body.classList.remove('print-area');
                     pivotSection.classList.remove('print-area');
                 });
 
