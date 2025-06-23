@@ -95,6 +95,43 @@
         .currency-EUR { background-color: #eef2ff; color: #3730a3; }
         .currency-GBP { background-color: #f0fdf4; color: #14532d; }
         .currency-EGP { background-color: #fafafa; color: #3f3f46; }
+
+        /* --- التعديل: إضافة ستايل الطباعة --- */
+        @media print {
+            body > *:not(.print-area) {
+                display: none;
+            }
+            .print-area {
+                display: block !important;
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                right: 20px;
+                width: auto;
+            }
+            .no-print {
+                display: none !important;
+            }
+            /* إعادة تعيين الألوان والظلال للطباعة */
+            * {
+                background: transparent !important;
+                color: #000 !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+            h2 {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+        }
     </style>
 </head>
 <body class="text-slate-800" oncontextmenu="return false;">
@@ -115,13 +152,13 @@
 
     <div id="main-content" class="container mx-auto p-4 sm:p-6 md:p-8 main-content blurred">
         
-        <header class="text-center mb-10 fade-in-up">
+        <header class="text-center mb-10 fade-in-up no-print">
             <h1 class="text-5xl md:text-7xl font-black text-red-700" id="overdue-percentage-header">0%</h1>
             <p class="text-xl md:text-2xl font-bold text-slate-700 mt-2">من ديوننا في خطر: خطة عمل فورية</p>
             <p class="text-sm text-slate-500 mt-1" id="report-date">تقرير يونيو 2025</p>
         </header>
 
-        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 no-print">
             <div id="bank-kpi-card" class="kpi-card cursor-pointer bg-white p-6 rounded-2xl shadow-md fade-in-up" style="animation-delay: 50ms;">
                 <div class="flex justify-between items-start">
                     <p class="text-lg font-bold text-slate-600">إجمالي أرصدة البنوك</p>
@@ -153,7 +190,7 @@
         </section>
 
 
-        <main class="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12">
+        <main class="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12 no-print">
             
             <section class="lg:col-span-3 bg-white p-6 rounded-2xl shadow-lg fade-in-up" style="animation-delay: 500ms;">
                 <h2 class="text-2xl font-bold mb-1 text-center">أين تتركز المشكلة؟</h2>
@@ -172,7 +209,7 @@
 
         </main>
 
-        <section class="bg-white p-6 rounded-2xl shadow-lg mb-12 fade-in-up" style="animation-delay: 700ms;">
+        <section class="bg-white p-6 rounded-2xl shadow-lg mb-12 fade-in-up no-print" style="animation-delay: 700ms;">
             <h2 class="text-2xl font-bold mb-8 text-center">تحليل المديونية حسب المندوب</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                 <div>
@@ -199,10 +236,10 @@
             </div>
         </section>
 
-        <section class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-12 fade-in-up" style="animation-delay: 800ms;">
+        <section id="pivot-report-section" class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-12 fade-in-up" style="animation-delay: 800ms;">
             <h2 class="text-2xl font-bold mb-6 text-center">تقرير الفواتير التفصيلي (Pivot Style)</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 px-2 items-center">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 px-2 items-center no-print">
                 <div class="md:col-span-1">
                     <label for="client-filter-input" class="block text-sm font-medium text-slate-700 mb-1">بحث حسب العميل</label>
                     <input list="client-datalist" id="client-filter-input" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="اكتب اسم العميل...">
@@ -231,6 +268,7 @@
                 <div class="md:col-span-1 flex flex-col justify-center">
                      <button id="expand-all-btn" class="w-full bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition">فتح الكل</button>
                      <button id="collapse-all-btn" class="w-full bg-slate-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-slate-600 transition mt-2">إغلاق الكل</button>
+                     <button id="print-pivot-btn" class="w-full bg-gray-700 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-gray-800 transition mt-2">🖨️ طباعة التقرير</button>
                 </div>
             </div>
 
@@ -251,7 +289,7 @@
             </div>
         </section>
         
-        <section id="bank-balances-section" class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-12 fade-in-up" style="animation-delay: 850ms;">
+        <section id="bank-balances-section" class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-12 fade-in-up no-print" style="animation-delay: 850ms;">
             <h2 class="text-2xl font-bold mb-6 text-center">أرصدة البنوك</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 px-2">
@@ -294,7 +332,7 @@
             </div>
         </section>
 
-        <section class="fade-in-up" style="animation-delay: 900ms;">
+        <section class="fade-in-up no-print" style="animation-delay: 900ms;">
             <h2 class="text-3xl font-bold text-center mb-8">خطة العمل المقترحة: خطوتان لاستعادة السيطرة</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 justify-center">
                 <div class="kpi-card bg-white p-6 rounded-2xl shadow-md border-t-4 border-blue-500">
@@ -322,7 +360,7 @@
             </div>
         </section>
 
-        <footer class="text-center mt-12 text-xs text-slate-400">
+        <footer class="text-center mt-12 text-xs text-slate-400 no-print">
             <p id="footer-date">تقرير لجنة متابعة التحصيلات - يونيو 2025</p>
         </footer>
 
@@ -658,7 +696,9 @@
                 const noResults = document.getElementById('no-results');
                 const expandAllBtn = document.getElementById('expand-all-btn');
                 const collapseAllBtn = document.getElementById('collapse-all-btn');
-                
+                const printPivotBtn = document.getElementById('print-pivot-btn');
+                const pivotSection = document.getElementById('pivot-report-section');
+
                 let currentSort = {
                     key: 'total',
                     order: 'desc'
@@ -753,6 +793,18 @@
                 collapseAllBtn.addEventListener('click', () => {
                     document.querySelectorAll('.collapsible-row').forEach(row => row.classList.remove('open'));
                     document.querySelectorAll('.detail-row-wrapper').forEach(row => row.classList.add('hidden'));
+                });
+                
+                // --- التعديل: إضافة حدث الطباعة ---
+                printPivotBtn.addEventListener('click', () => {
+                    document.body.classList.add('print-area');
+                    pivotSection.classList.add('print-area');
+                    window.print();
+                });
+
+                window.addEventListener('afterprint', () => {
+                    document.body.classList.remove('print-area');
+                    pivotSection.classList.remove('print-area');
                 });
 
 
