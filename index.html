@@ -137,6 +137,15 @@
             .print-with-details .detail-row-wrapper {
                 display: table-row !important; /* مهم لإظهار الصف بشكل صحيح في الجدول */
             }
+            /* --- تعديل إظهار رأس الطباعة --- */
+            #print-header {
+                display: block !important; /* لإظهار العنصر عند الطباعة */
+                text-align: center;
+                margin-bottom: 20px;
+                font-size: 1.25rem; /* حجم خط مناسب */
+                font-weight: 700; /* خط عريض */
+                color: #1e293b; /* slate-800 */
+            }
         }
     </style>
 </head>
@@ -277,6 +286,8 @@
                      <button id="print-pivot-btn" class="w-full bg-gray-700 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-gray-800 transition mt-2">🖨️ طباعة التقرير</button>
                 </div>
             </div>
+
+            <div id="print-header" class="hidden"></div>
 
             <div class="overflow-x-auto">
                 <table class="min-w-full">
@@ -705,7 +716,6 @@
                 const printPivotBtn = document.getElementById('print-pivot-btn');
                 const pivotSection = document.getElementById('pivot-report-section');
                 
-                // --- التعديل: إضافة متغير الحالة للطباعة ---
                 let isPrintDetailsExpanded = false;
 
                 let currentSort = {
@@ -767,7 +777,6 @@
                         groupRow.addEventListener('click', () => {
                             groupRow.classList.toggle('open');
                             detailWrapper.classList.toggle('hidden');
-                            // التعديل: إعادة ضبط حالة الطباعة عند التغيير اليدوي
                             isPrintDetailsExpanded = false;
                         });
                     });
@@ -799,30 +808,38 @@
                 expandAllBtn.addEventListener('click', () => {
                     document.querySelectorAll('.collapsible-row').forEach(row => row.classList.add('open'));
                     document.querySelectorAll('.detail-row-wrapper').forEach(row => row.classList.remove('hidden'));
-                    // التعديل: ضبط حالة الطباعة عند فتح الكل
                     isPrintDetailsExpanded = true;
                 });
 
                 collapseAllBtn.addEventListener('click', () => {
                     document.querySelectorAll('.collapsible-row').forEach(row => row.classList.remove('open'));
                     document.querySelectorAll('.detail-row-wrapper').forEach(row => row.classList.add('hidden'));
-                    // التعديل: ضبط حالة الطباعة عند إغلاق الكل
                     isPrintDetailsExpanded = false;
                 });
                 
                 printPivotBtn.addEventListener('click', () => {
-                    // التعديل: التحقق من حالة الطباعة قبل إضافة الكلاس
                     if (isPrintDetailsExpanded) {
                         pivotSection.classList.add('print-with-details');
                     }
+                    
+                    const printHeader = document.getElementById('print-header');
+                    const totalAmountKPI = document.getElementById('total-clients-amount-kpi');
+                    if (printHeader && totalAmountKPI) {
+                        printHeader.innerHTML = `إجمالي المبلغ المحدد: ${totalAmountKPI.innerHTML}`;
+                    }
+
                     pivotSection.classList.add('print-area');
                     window.print();
                 });
 
                 window.addEventListener('afterprint', () => {
                     pivotSection.classList.remove('print-area');
-                    // التعديل: التأكد من إزالة كلاس التفاصيل بعد الطباعة
                     pivotSection.classList.remove('print-with-details');
+
+                    const printHeader = document.getElementById('print-header');
+                    if (printHeader) {
+                        printHeader.innerHTML = ''; 
+                    }
                 });
 
 
