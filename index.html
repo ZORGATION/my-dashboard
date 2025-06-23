@@ -202,7 +202,7 @@
         <section class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg mb-12 fade-in-up" style="animation-delay: 800ms;">
             <h2 class="text-2xl font-bold mb-6 text-center">تقرير الفواتير التفصيلي (Pivot Style)</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6 px-2">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 px-2 items-center">
                 <div class="md:col-span-1">
                     <label for="client-filter-input" class="block text-sm font-medium text-slate-700 mb-1">بحث حسب العميل</label>
                     <input list="client-datalist" id="client-filter-input" class="w-full p-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="اكتب اسم العميل...">
@@ -218,17 +218,19 @@
                     <label for="invoice-search" class="block text-sm font-medium text-slate-700 mb-1">بحث برقم الفاتورة</label>
                     <input type="text" id="invoice-search" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="ادخل رقم الفاتورة...">
                 </div>
-                <div class="text-center md:text-right bg-slate-50 p-2 rounded-lg">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">إجمالي العملاء</label>
-                    <p id="total-clients-kpi" class="text-3xl font-bold text-blue-600">0</p>
+                <div class="md:col-span-1">
+                    <div class="text-center bg-slate-50 p-2 rounded-lg mb-2">
+                        <label class="block text-sm font-medium text-slate-700">إجمالي العملاء</label>
+                        <p id="total-clients-kpi" class="text-2xl font-bold text-blue-600">0</p>
+                    </div>
+                    <div class="text-center bg-slate-50 p-2 rounded-lg">
+                        <label class="block text-sm font-medium text-slate-700">إجمالي المبلغ</label>
+                        <p id="total-clients-amount-kpi" class="text-xl font-bold text-green-600">0</p>
+                    </div>
                 </div>
-                <div class="text-center md:text-right bg-slate-50 p-2 rounded-lg">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">إجمالي المبلغ (للفلتر)</label>
-                    <p id="total-clients-amount-kpi" class="text-3xl font-bold text-green-600">0</p>
-                </div>
-                <div class="flex flex-col justify-center">
+                <div class="md:col-span-1 flex flex-col justify-center">
                      <button id="expand-all-btn" class="w-full bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition">فتح الكل</button>
-                     <button id="collapse-all-btn" class="w-full bg-slate-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-slate-600 transition mt-1">إغلاق الكل</button>
+                     <button id="collapse-all-btn" class="w-full bg-slate-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-slate-600 transition mt-2">إغلاق الكل</button>
                 </div>
             </div>
 
@@ -743,7 +745,6 @@
                     });
                 });
                 
-                // التعديل: إضافة الأحداث لأزرار فتح/إغلاق الكل
                 expandAllBtn.addEventListener('click', () => {
                     document.querySelectorAll('.collapsible-row').forEach(row => row.classList.add('open'));
                     document.querySelectorAll('.detail-row-wrapper').forEach(row => row.classList.remove('hidden'));
