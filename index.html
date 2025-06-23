@@ -96,24 +96,17 @@
         .currency-GBP { background-color: #f0fdf4; color: #14532d; }
         .currency-EGP { background-color: #fafafa; color: #3f3f46; }
 
+        /* --- التعديل: إصلاح ستايل الطباعة ليعمل على جميع الأجهزة --- */
         @media print {
-            body > *:not(.print-area) {
-                visibility: hidden;
+            body.is-printing > * {
+                display: none;
             }
-            .print-area, .print-area * {
-                visibility: visible;
-            }
-            .print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 20px;
+            body.is-printing #pivot-report-section {
+                display: block !important;
             }
             .no-print {
                 display: none !important;
             }
-            /* --- التعديل: إظهار رأس الطباعة --- */
             #print-header-kpis {
                 display: block !important;
             }
@@ -126,13 +119,17 @@
                 page-break-inside: avoid;
                 page-break-after: auto;
             }
+            thead {
+                display: table-header-group;
+            }
             th, td {
-                border: 1px solid #ddd;
+                border: 1px solid #ccc;
                 padding: 8px;
             }
             h2 {
                 text-align: center;
                 margin-bottom: 20px;
+                page-break-after: avoid;
             }
             .toggle-icon, .sort-icon {
                 display: none !important;
@@ -140,7 +137,7 @@
             .detail-row-wrapper {
                 display: none !important;
             }
-            .print-with-details .detail-row-wrapper {
+            .is-printing.print-with-details .detail-row-wrapper {
                 display: table-row !important;
             }
         }
@@ -722,7 +719,6 @@
                 const expandAllBtn = document.getElementById('expand-all-btn');
                 const collapseAllBtn = document.getElementById('collapse-all-btn');
                 const printPivotBtn = document.getElementById('print-pivot-btn');
-                const pivotSection = document.getElementById('pivot-report-section');
                 
                 let isPrintDetailsExpanded = false;
                 let currentSort = {
@@ -761,7 +757,6 @@
                     const clientCount = sortedGroups.length;
                     document.getElementById('total-clients-kpi').textContent = clientCount;
 
-                    // --- التعديل: تحديث أرقام رأس الطباعة ---
                     document.getElementById('print-total-clients').textContent = clientCount;
                     document.getElementById('print-total-amount').innerHTML = new Intl.NumberFormat(numberLocale, { style: 'currency', currency: 'EGP', maximumFractionDigits: 0 }).format(filteredTotalAmount);
 
@@ -827,17 +822,20 @@
                     isPrintDetailsExpanded = false;
                 });
                 
+                // --- التعديل: إصلاح حدث الطباعة ---
                 printPivotBtn.addEventListener('click', () => {
+                    const body = document.body;
                     if (isPrintDetailsExpanded) {
-                        pivotSection.classList.add('print-with-details');
+                        body.classList.add('print-with-details');
                     }
-                    pivotSection.classList.add('print-area');
+                    body.classList.add('is-printing');
                     window.print();
                 });
 
                 window.addEventListener('afterprint', () => {
-                    pivotSection.classList.remove('print-area');
-                    pivotSection.classList.remove('print-with-details');
+                    const body = document.body;
+                    body.classList.remove('is-printing');
+                    body.classList.remove('print-with-details');
                 });
 
 
